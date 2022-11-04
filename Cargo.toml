@@ -1,5 +1,5 @@
 [package]
-name = "graphql_rs_test"
+name = "graphql_actix_test"
 version = "0.1.0"
 edition = "2021"
 

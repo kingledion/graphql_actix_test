@@ -1,12 +1,12 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub struct GraphQLResponseReciever<T> {
+pub struct GraphQLResponseReciever<T: PartialEq> {
     pub data: Option<T>,
     pub errors: Option<Vec<GraphQLResponseError>>,
 }
 
-impl<T> GraphQLResponseReciever<T> {
+impl<T: PartialEq> GraphQLResponseReciever<T> {
     pub fn get_data(&self) -> &T {
         self.data.as_ref().unwrap()
     }
