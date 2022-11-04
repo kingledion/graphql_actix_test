@@ -26,11 +26,6 @@ impl<T> GraphQLResponseReciever<T> {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct GoodsReciever<T> {
-    pub goods: T,
-}
-
-#[derive(Deserialize, Debug)]
 pub struct GraphQLResponseError {
     pub message: String,
     // locations field is not retrieved or compared in this context
