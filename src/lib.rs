@@ -1,3 +1,16 @@
+//! Library for testing graphql endpoints with the actix-web framework
+//! 
+//! This library is designed to process graphql as the result of a test. The test framework 
+//! wraps an assertion testing capability and takes as arguments an initial setup function, 
+//! definitions of a repository,repository setup data, arguments to the graphql schema, an
+//! execution function, and expected results of the execution schema. 
+//! 
+//! In addition to the test framework, there are helper structures. A reciever structure 
+//! unpacks the expected data and errors from a graphql response. Argument and Expected 
+//! structures pass the arguments to a graphql schema and test the expeccted output values 
+//! (including http status code, data and errors).
+#![warn(missing_docs)]
+
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -5,7 +18,9 @@ use actix_web::http::StatusCode;
 use actix_web::dev::ServiceResponse;
 use actix_web::test;
 
-
+/// A struct for recieving a GraphQL response.
+/// 
+/// 
 #[derive(Deserialize, Debug)]
 pub struct GraphQLResponseReciever<T: PartialEq> {
     pub data: Option<T>,
@@ -45,7 +60,7 @@ pub struct Argument{
 pub struct Expected<V>{
     pub status: StatusCode,
     pub errmsg: Option<Vec<String>>,
-    pub value: Option<V>,
+    pub data: Option<V>,
 }
 
 pub async fn test_framework<'a, FI, FR, FutR, R, FE, FutE, V> (
@@ -90,7 +105,7 @@ pub async fn test_framework<'a, FI, FR, FutR, R, FE, FutE, V> (
             None => {}
         };
 
-        match exp.value {
+        match exp.data {
             Some(v) => assert_eq!(got.get_data(), &v),
             None => {}
         };
