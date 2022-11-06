@@ -18,20 +18,26 @@ use actix_web::http::StatusCode;
 use actix_web::dev::ServiceResponse;
 use actix_web::test;
 
-/// A struct for recieving a GraphQL response.
-/// 
-/// 
+/// A struct for deserializing a GraphQL response according to GraphQL specification
 #[derive(Deserialize, Debug)]
 pub struct GraphQLResponseReciever<T: PartialEq> {
+    /// The data specified by this struct's type paramter. May be None. 
     pub data: Option<T>,
+    /// A vector of error struct. May be None. 
     pub errors: Option<Vec<GraphQLResponseError>>,
 }
 
 impl<T: PartialEq> GraphQLResponseReciever<T> {
+    /// A convenience function for unwrapping and returning the data member. Will panic if the
+    /// data is none; should be used for testing when a value is expected and a panic indicates
+    /// a failed test. 
     pub fn get_data(&self) -> &T {
         self.data.as_ref().unwrap()
     }
 
+    /// A convenience function for returning the error messages. Will return a vector of the
+    /// 'message' fields from all errors, with order maintained. If the optional errors field 
+    /// is None, then an empty vector is returned. 
     pub fn get_messages(&self) -> Vec<String> {
         match &self.errors {
             Some(s) => s
@@ -46,29 +52,70 @@ impl<T: PartialEq> GraphQLResponseReciever<T> {
     }
 }
 
+/// A struct for deserializing an GraphQl error message according to GraphQL specification. Only 
+/// the 'message' field is implemented; 'locations' and 'paths' are ignored.
 #[derive(Deserialize, Debug)]
 pub struct GraphQLResponseError {
+    /// A string error message 
     pub message: String,
     // locations field is not retrieved or compared in this context
+    // paths field is not retrieved or compared in this context
 }
 
+/// A struct for passing the arguments to a GraphQL schema. The arguments consist of HTTP headers
+/// and a payload. 
 pub struct Argument{
+    /// A vector of header tuples, which consist of a pair of strings. 
     pub headers: Vec<(String, String)>,
+    /// A string graphql payload. 
     pub payload: String,
 }
 
+/// A struct for defining the expected output of a GraphQL schema. Expected results consist of 
+/// an http status code, am optional vector of error messages, and some optional data. 
 pub struct Expected<V>{
+    /// An http status code
     pub status: StatusCode,
+    /// An optional vector of String error messages. This should correspond to the 'message' fields 
+    /// of the array in the 'error' field, as defined in a GraphQL schema response map. 
     pub errmsg: Option<Vec<String>>,
+    /// An optional data of the struct's type pa
     pub data: Option<V>,
 }
 
+/// Executes tests against a defined environment using the actix_web framework.
+/// 
+/// Requires the following type parameters:
+/// - `FI` : An initializing function, which takes no arguments and returns no parameters. This can
+/// be used to execute code that is expected to run only one time across all parallel tests. 
+/// - `FR` : A function to initialize the repository. This function must take as an argument 
+/// an optional JSON deserialziable data structure to be set as data in the repo. Returns `FutR`.
+/// - `FutR` : A future that resolves to a repository of type `R`.
+/// - `R` :  A repository; there are no restrictions on this type but it will be passed as argument
+/// to `FE`. 
+/// - `FE` : An executing function that will run the test schema. Takes an [Argument] as argument
+/// and returns `FutE`.
+/// - `FutE` : A future that resolves to an [actix_web::dev::ServiceResponse](https://docs.rs/actix-web/latest/actix_web/dev/struct.ServiceResponse.html)
+/// - `V` : The data type returned by the schema being tested by this framework. 
+/// 
+/// Takes the following function arguments:
+/// - `init_func` : An initializing function of type `FI`.
+/// - `repo_func` : A fuction to initialize the repository of type `FR`.
+/// - `repo_data` : Optional data used to initialize the repository. Must be a JSON deserializable 
+/// data structure. 
+/// - `arg` : [Argument] that is passed to the executing function
+/// - `exec_func` : An executing function of type `FE`.
+/// - `exp` : [Expected] return of the function, with any data of type `V`. 
+/// 
+/// This function will execute the test with the defined initialization function, initialized 
+/// repository and arguments. Compares the resulting GraphQL response to the expected values using
+/// a series of asserts, which prints results from any test failures.
 pub async fn test_framework<'a, FI, FR, FutR, R, FE, FutE, V> (
     init_func: FI,
     repo_func: FR,
     repo_data: Option<&'a mut [Value]>,
     arg: Argument,
-    exec_func: FE, 
+    exec_func: FE,
     exp: Expected<V>,
 ) where 
     FI: Fn(),
