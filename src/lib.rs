@@ -151,7 +151,8 @@ pub async fn test_framework<'a, FI, FR, FutR, R, FE, FutE, V> (
                     Some(d) => d,
                     None => {
                         let msgs = got.get_messages();
-                        panic!("Expected data from graphql response but did not get any. Error messages is ")
+                        let msg = msgs.join("\n\t");
+                        panic!("Expected data from graphql response but did not get any. Error messages are: {}", msg)
                     }
                 };
                 assert_eq!(got_data, v);
