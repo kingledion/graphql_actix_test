@@ -28,13 +28,6 @@ pub struct GraphQLResponseReciever<T: PartialEq> {
 }
 
 impl<T: PartialEq> GraphQLResponseReciever<T> {
-    /// A convenience function for unwrapping and returning the data member. Will panic if the
-    /// data is none; should be used for testing when a value is expected and a panic indicates
-    /// a failed test. 
-    pub fn get_data(&self) -> &T {
-        self.data.as_ref().unwrap()
-    }
-
     /// A convenience function for returning the error messages. Will return a vector of the
     /// 'message' fields from all errors, with order maintained. If the optional errors field 
     /// is None, then an empty vector is returned. 
@@ -153,7 +146,17 @@ pub async fn test_framework<'a, FI, FR, FutR, R, FE, FutE, V> (
         };
 
         match exp.data {
-            Some(v) => assert_eq!(got.get_data(), &v),
+            Some(v) => {
+                let got_data = match got.data {
+                    Some(d) => d,
+                    None => {
+                        let msgs = got.get_messages();
+                        let msg = msgs.join("\n\t");
+                        panic!("Expected data from graphql response but did not get any. Error messages are: {}", msg)
+                    }
+                };
+                assert_eq!(got_data, v);
+            }
             None => {}
         };
     } else {
