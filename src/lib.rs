@@ -16,6 +16,7 @@ use serde_json::Value;
 
 use actix_web::http::StatusCode;
 use actix_web::dev::ServiceResponse;
+use actix_web::body::{EitherBody, BoxBody};
 use actix_web::test;
 
 /// A struct for deserializing a GraphQL response according to GraphQL specification
@@ -115,7 +116,7 @@ pub async fn test_framework<'a, FI, FR, FutR, R, FE, FutE, V> (
     FR: Fn(Option<&'a mut [Value]>) -> FutR,
     FutR: std::future::Future<Output = R>,
     FE: Fn(R, Argument) -> FutE,
-    FutE: std::future::Future<Output = ServiceResponse>,
+    FutE: std::future::Future<Output = ServiceResponse<EitherBody<BoxBody>>>,
     V: serde::de::DeserializeOwned + PartialEq + std::fmt::Debug,
 {
     init_func();
